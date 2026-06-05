@@ -52,10 +52,12 @@ build_prompt() {  # <slug> <label>
   [ -f "$CTX" ] && ctx="$(cat "$CTX")"
   for y in "${YEARS[@]}"; do
     [ -f "$RROOT/$slug/$y.md" ] || continue
+    # 입력 축소: 가장 긴 '예상 꼬리질문'·'모범답안' 섹션은 빼고 §1~7(개념·뉴스·키워드·발표주제)만 전달
+    # → 프롬프트 크기를 절반으로 줄여 보강된 큰 주제도 gemini 한계 내에서 처리.
     combined="${combined}
 
 ===== [${y}.md] =====
-$(cat "$RROOT/$slug/$y.md")"
+$(sed '/^### 8\. 예상 꼬리질문/,$d' "$RROOT/$slug/$y.md")"
   done
   cat <<EOP
 당신은 SSAFY(삼성 청년 SW 아카데미) PT(발표)면접을 준비하는 지원자의 IT시사 공부자료를

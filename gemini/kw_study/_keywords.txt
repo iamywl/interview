@@ -1,0 +1,23 @@
+agentic|AI 에이전트
+airegulation|AI 규제
+cloud|클라우드 네이티브
+datacenter|AI 데이터센터
+devsecops|DevSecOps
+digitaltwin|디지털 트윈
+finops|클라우드 비용 최적화
+genai|생성형 AI
+hyperautomation|초자동화
+identity|디지털 신원
+lowcode|로우코드/노코드
+multimodal|멀티모달 AI
+platform|플랫폼 엔지니어링
+pqc|양자내성암호
+rag|검색증강생성
+ransomware|랜섬웨어/공급망 공격
+realtime|실시간 데이터 플랫폼
+robotics|자율 로봇
+slm|소형언어모델
+spatial|공간 컴퓨팅
+sustainability|지속가능성 기술
+vectordb|벡터DB
+zerotrust|제로 트러스트

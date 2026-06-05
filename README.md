@@ -27,6 +27,45 @@ PT면접(발표면접)에 맞춰 **발표 주제 후보 → 핵심 개념 → �
 - 같은 토픽을 연도별로 비교하며 흐름을 볼 수 있다. 예) [gemini/2022/genai.md](gemini/2022/genai.md) → [gemini/2026/genai.md](gemini/2026/genai.md)
 - 보조: [gemini/xgboost/](gemini/xgboost/) — XGBoost 관련 정리.
 
+### 2-1. `keyword_study.sh` — 키워드 발굴 → 키워드별 심화조사 (2단계 자동 파이프라인)
+
+[gemini/keyword_study.sh](gemini/keyword_study.sh)는 **tmux로 Gemini 에이전트를 병렬 생성**하는 2단계 파이프라인이다. 기존 `research_gartner.sh`·`deep_themes.sh`와 달리 토픽이 고정되어 있지 않고, **1단계가 키워드를 발굴 → 그 개수(N/M)에 맞춰 2단계가 키워드 1개당 에이전트 1개로 동적 fan-out** 한다.
+
+- **1단계(discover)**: 2022~2026 각 연도마다 에이전트 1개 → 그해 핫했던 IT 키워드 발굴. 결과: `gemini/kw_study/_discover/<연도>.md`.
+- **merge**: 모든 연도의 키워드를 slug 기준으로 합쳐 dedup → `gemini/kw_study/_keywords.txt`.
+- **2단계(study)**: 키워드 1개당 에이전트 1개 → 소개·개념·동작원리·**장점·단점·한계점**·필요시 **수학적 개념**·근거·PT 발표 설계를 한 문서로. 결과: `gemini/kw_study/keywords/<slug>.md`.
+
+```bash
+# 완전 자동(논스톱): discover → 대기 → merge → study 까지 한 번에
+bash gemini/keyword_study.sh auto
+
+# 단계별 실행도 가능
+bash gemini/keyword_study.sh discover   # 1단계만
+bash gemini/keyword_study.sh merge      # 키워드 목록 생성(dedup)
+bash gemini/keyword_study.sh study      # 2단계 fan-out
+bash gemini/keyword_study.sh status     # 활성 세션·완료 문서 현황
+bash gemini/keyword_study.sh retry      # 빈/부실 문서만 재투입
+bash gemini/keyword_study.sh stop       # 모든 세션 종료
+```
+
+환경변수: `GEMINI_MODEL`(기본 `gemini-2.5-pro`) · `MAX_CONCURRENT`(동시 세션 상한, 기본 8) · `YEARS`(기본 `2022 2023 2024 2025 2026`) · `MAX_KEYWORDS`(2단계 상한, 기본 0=무제한) · `MIN_CHARS`(retry 임계, 기본 3000). 인증은 기존 Vertex AI ADC를 재사용한다.
+
+### 2-2. `review_all.sh` — 저장소 전체 문서 병렬 리뷰 → `reviewedbygemini/`
+
+[gemini/review_all.sh](gemini/review_all.sh)는 **저장소의 모든 `.md`를 순회하며 각 문서를 Gemini로 병렬 리뷰**하고, 결과를 원본 트리 구조 그대로 [reviewedbygemini/](reviewedbygemini/)에 미러링 저장한다. (`gemini/2024/genai.md` → `reviewedbygemini/gemini/2024/genai.md`)
+
+각 리뷰는 ① 문서 요지 ② **사실 정확성 점검(표)** ③ 최신성(2026 기준) ④ 누락·보완 필요 ⑤ **추가 조사 주제 제안 5개**(조사한 만큼 다시 보충할 주제) ⑥ PT 발표 활용도 ⑦ 종합 평가로 구성된다.
+
+```bash
+bash gemini/review_all.sh                 # 전체 .md 병렬 리뷰(이미 리뷰된 건 자동 skip)
+bash gemini/review_all.sh run gemini/kw_study   # 특정 폴더만 리뷰
+bash gemini/review_all.sh status          # 활성 세션·완료 현황
+bash gemini/review_all.sh retry           # 빈/부실 리뷰만 재실행
+bash gemini/review_all.sh stop            # 모든 리뷰 세션 종료
+```
+
+환경변수: `GEMINI_MODEL`(기본 `gemini-2.5-flash`, 대량이라 flash 기본) · `MAX_CONCURRENT`(기본 8) · `FORCE`(1이면 재리뷰) · `MIN_CHARS`(기본 1200) · `MAX_SRC_CHARS`(큰 원본 skip, 기본 200000). 인증은 기존 Vertex AI ADC를 재사용한다.
+
 ---
 
 ## 추천 사용법
